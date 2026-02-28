@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 6: Edge Deployment with CDK</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-6-edge-deployment-with-cdk-and-greengrass">Part 6: Edge Deployment with CDK and Greengrass</h1>
+
+<p>We’ve built an AI agent that controls our M5Stick. Now let’s deploy it to the edge.</p>
+
+<h2 id="why-edge">Why Edge?</h2>
+
+<ul>
+  <li>Lower latency (sub-second)</li>
+  <li>Works with intermittent connectivity</li>
+  <li>Less data to cloud = lower costs</li>
+  <li>Processing stays local</li>
+  <li>Each edge location runs independently</li>
+</ul>
+
+<h2 id="architecture">Architecture</h2>
+
+<p><img src="/diagrams/edge-architecture.svg" alt="edge architecture" /></p>
+
+<h2 id="aws-iot-greengrass">AWS IoT Greengrass</h2>
+
+<p>Greengrass extends AWS to edge devices for local compute, ML inference (if you having sufficent compute resources), and secure communication.</p>
+
+<p><strong>Key Concepts:</strong></p>
+
+<p><strong>Nucleus</strong>: Core runtime that manages everything on the device.</p>
+
+<p><strong>Components</strong> (the “what”): Software that runs on the device. Each component has:</p>
+<ul>
+  <li>Recipe: Configuration (what to run, how to run it)</li>
+  <li>Artifacts: The actual code (Docker images, binaries, scripts)</li>
+  <li>Can be custom or AWS-provided (stream manager, Docker support)</li>
+</ul>
+
+<p><strong>Deployments</strong> (the “how”): Mechanism to push components to devices. Defines which component versions run on which devices. Enables OTA updates to one device or thousands.</p>
+
+<p><strong>Our Approach:</strong></p>
+
+<p>We install Greengrass Nucleus for device provisioning and IoT connectivity, then run the agent as <strong>standalone Docker</strong> (not a Greengrass component).</p>
+
+<p>For this demo, we run Docker directly (SSH in, run <code class="language-plaintext highlighter-rouge">agent</code>). Simpler to debug and iterate.</p>
+
+<p>For production with many devices, you’d package the agent as a Greengrass component and use deployments for OTA updates. We include <code class="language-plaintext highlighter-rouge">greengrass-recipe.yaml</code> as a starting point if you want to try this.</p>
+
+<h2 id="cdk-setup">CDK Setup</h2>
+
+<p>AWS CDK (love it or hate it) defines infrastructure as TypeScript code.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>infrastructure/cdk
+npm <span class="nb">install</span>
+
+<span class="c"># Configure AWS</span>
+aws configure sso  <span class="c"># or aws configure</span>
+
+<span class="c"># Bootstrap CDK (first time only)</span>
+<span class="c"># Creates S3 bucket and ECR repo for CDK assets</span>
+cdk bootstrap
+
+<span class="c"># Optional: Use Podman instead of Docker</span>
+<span class="nb">export </span><span class="nv">CDK_DOCKER</span><span class="o">=</span>podman
+</code></pre></div></div>
+
+<p><strong>Bootstrap Note</strong>: First time per account/region. Creates S3 bucket, ECR repo, and IAM roles.</p>
+
+<h2 id="the-stack">The Stack</h2>
+
+<p><code class="language-plaintext highlighter-rouge">lib/robotinc-stack.ts</code> creates:</p>
+
+<p><strong>Networking</strong></p>
+<ul>
+  <li>VPC with private subnets and NAT Gateway</li>
+  <li>VPC Endpoints for Bedrock, IoT Core, DynamoDB, ECR, SSM (no internet gateway needed)</li>
+</ul>
+
+<p><strong>Compute</strong></p>
+<ul>
+  <li>EC2 t4g.small ARM64 (cost-optimised)</li>
+  <li>Greengrass Core (auto-installed via SSM)</li>
+  <li>Docker for agent container</li>
+</ul>
+
+<p><strong>Storage</strong></p>
+<ul>
+  <li>DynamoDB for device state</li>
+  <li>ECR for Docker images</li>
+  <li>S3 for deployment artifacts</li>
+</ul>
+
+<p><strong>Automation</strong></p>
+<ul>
+  <li>SSM Document: Greengrass setup script</li>
+  <li>SSM Association: Triggers setup on instance</li>
+  <li>Lambda: Processes device state updates</li>
+</ul>
+
+<p><strong>Key Code:</strong></p>
+
+<div class="language-typescript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// t4g.small ARM64 - cost optimized</span>
+<span class="kd">const</span> <span class="nx">greengrassInstance</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ec2</span><span class="p">.</span><span class="nx">Instance</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="dl">'</span><span class="s1">GreengrassInstance</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">vpc</span><span class="p">,</span>
+  <span class="na">instanceType</span><span class="p">:</span> <span class="nx">ec2</span><span class="p">.</span><span class="nx">InstanceType</span><span class="p">.</span><span class="k">of</span><span class="p">(</span><span class="nx">ec2</span><span class="p">.</span><span class="nx">InstanceClass</span><span class="p">.</span><span class="nx">T4G</span><span class="p">,</span> <span class="nx">ec2</span><span class="p">.</span><span class="nx">InstanceSize</span><span class="p">.</span><span class="nx">SMALL</span><span class="p">),</span>
+  <span class="na">machineImage</span><span class="p">:</span> <span class="nx">ec2</span><span class="p">.</span><span class="nx">MachineImage</span><span class="p">.</span><span class="nx">latestAmazonLinux2023</span><span class="p">({</span> 
+    <span class="na">cpuType</span><span class="p">:</span> <span class="nx">ec2</span><span class="p">.</span><span class="nx">AmazonLinuxCpuType</span><span class="p">.</span><span class="nx">ARM_64</span> 
+  <span class="p">}),</span>
+  <span class="na">role</span><span class="p">:</span> <span class="nx">greengrassRole</span><span class="p">,</span>
+  <span class="na">vpcSubnets</span><span class="p">:</span> <span class="p">{</span> <span class="na">subnetType</span><span class="p">:</span> <span class="nx">ec2</span><span class="p">.</span><span class="nx">SubnetType</span><span class="p">.</span><span class="nx">PRIVATE_WITH_EGRESS</span> <span class="p">},</span>
+  <span class="na">requireImdsv2</span><span class="p">:</span> <span class="kc">true</span>
+<span class="p">});</span>
+
+<span class="c1">// Build and push Docker image</span>
+<span class="kd">const</span> <span class="nx">agentImage</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ecrAssets</span><span class="p">.</span><span class="nx">DockerImageAsset</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="dl">'</span><span class="s1">AgentImage</span><span class="dl">'</span><span class="p">,</span> <span class="p">{</span>
+  <span class="na">directory</span><span class="p">:</span> <span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">__dirname</span><span class="p">,</span> <span class="dl">'</span><span class="s1">../../../components/edge-agent</span><span class="dl">'</span><span class="p">),</span>
+  <span class="na">platform</span><span class="p">:</span> <span class="nx">ecrAssets</span><span class="p">.</span><span class="nx">Platform</span><span class="p">.</span><span class="nx">LINUX_ARM64</span>
+<span class="p">});</span>
+</code></pre></div></div>
+
+<h2 id="deploy">Deploy</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>infrastructure/cdk
+cdk deploy
+
+<span class="c"># Output:</span>
+<span class="c"># RobotincStack.AgentImageUri = 659587496222.dkr.ecr...</span>
+<span class="c"># RobotincStack.InstanceIdOutput = i-0520...</span>
+</code></pre></div></div>
+
+<p>One command:</p>
+<ol>
+  <li>Builds Docker image for ARM64</li>
+  <li>Pushes to ECR</li>
+  <li>Creates VPC and networking</li>
+  <li>Launches EC2 instance</li>
+  <li>Installs Greengrass via SSM</li>
+  <li>Creates DynamoDB table</li>
+  <li>Sets up Lambda and IoT rules</li>
+</ol>
+
+<h2 id="operating-at-the-edge">Operating at the Edge</h2>
+
+<p><strong>Automated Greengrass Setup</strong></p>
+
+<p>SSM document provisions Greengrass:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yum <span class="nb">install</span> <span class="nt">-y</span> docker git java-17-amazon-corretto-headless
+usermod <span class="nt">-a</span> <span class="nt">-G</span> docker ec2-user
+usermod <span class="nt">-a</span> <span class="nt">-G</span> docker ssm-user
+
+java <span class="nt">-jar</span> Greengrass.jar <span class="se">\</span>
+  <span class="nt">--aws-region</span> <span class="k">${</span><span class="nv">region</span><span class="k">}</span> <span class="se">\</span>
+  <span class="nt">--thing-name</span> robotinc-greengrass-core <span class="se">\</span>
+  <span class="nt">--provision</span> <span class="nb">true</span> <span class="se">\</span>
+  <span class="nt">--setup-system-service</span> <span class="nb">true</span>
+</code></pre></div></div>
+
+<p>Creates IoT Thing, device certificates, and systemd service.</p>
+
+<p><strong>Running the Agent</strong></p>
+
+<p>We run the agent as standalone Docker, not as a Greengrass component.</p>
+
+<p>SSM document creates shell aliases:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>agent          <span class="c"># Normal mode</span>
+agent-verbose  <span class="c"># Detailed logging</span>
+</code></pre></div></div>
+
+<p>Behind the scenes:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># What 'agent' actually runs:</span>
+docker run <span class="nt">-it</span> <span class="nt">--rm</span> <span class="nt">--network</span> host <span class="se">\</span>
+  <span class="nt">-e</span> <span class="nv">AWS_REGION</span><span class="o">=</span>eu-west-2 <span class="se">\</span>
+  <span class="nt">-e</span> <span class="nv">OLLAMA_HOST</span><span class="o">=</span>http://localhost:11434 <span class="se">\</span>
+  &lt;image-uri&gt;
+</code></pre></div></div>
+
+<p><strong>Accessing the Instance</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Get instance ID</span>
+<span class="nv">INSTANCE_ID</span><span class="o">=</span><span class="si">$(</span>aws cloudformation describe-stacks <span class="se">\</span>
+  <span class="nt">--stack-name</span> RobotincStack <span class="se">\</span>
+  <span class="nt">--query</span> <span class="s1">'Stacks[0].Outputs[?OutputKey==`InstanceIdOutput`].OutputValue'</span> <span class="se">\</span>
+  <span class="nt">--output</span> text<span class="si">)</span>
+
+<span class="c"># Connect via SSM (no SSH keys!)</span>
+aws ssm start-session <span class="nt">--target</span> <span class="nv">$INSTANCE_ID</span>
+
+<span class="c"># Check Greengrass</span>
+<span class="nb">sudo </span>systemctl status greengrass
+
+<span class="c"># Run agent</span>
+agent
+</code></pre></div></div>
+
+<p><strong>Agent in Action:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>agent
+
+<span class="o">============================================================</span>
+  Robotinc IoT Edge Agent
+  AI-Powered Device Control
+<span class="o">============================================================</span>
+
+Commands: <span class="s1">'turn red'</span>, <span class="s1">'get status'</span>, <span class="s1">'show history'</span>, <span class="s1">'quit'</span>
+
+<span class="nt">------------------------------------------------------------</span>
+
+You: turn it ocean blue
+Agent: Changed device to cyan
+
+You: show <span class="nb">history
+</span>Agent: Recent <span class="nb">history</span>:
+2024-01-15T10:30:00: RGB<span class="o">(</span>0, 128, 128<span class="o">)</span>
+2024-01-15T10:25:00: RGB<span class="o">(</span>255, 0, 0<span class="o">)</span>
+2024-01-15T10:20:00: RGB<span class="o">(</span>0, 0, 255<span class="o">)</span>
+
+You: quit
+Shutting down agent...
+</code></pre></div></div>
+
+<p><strong>Verbose Mode:</strong></p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>agent-verbose
+
+<span class="o">[</span>VERBOSE MODE ENABLED]
+
+You: turn it blue
+<span class="o">[</span>AGENT] Processing color <span class="nb">command
+</span>Topic: robotinc/device/command/robotinc-m5stick-001
+Payload: <span class="o">{</span><span class="s2">"action"</span>:<span class="s2">"color"</span>,<span class="s2">"r"</span>:0,<span class="s2">"g"</span>:0,<span class="s2">"b"</span>:255<span class="o">}</span>
+Response: 200
+Agent: Changed device to blue
+</code></pre></div></div>
+
+<h2 id="cleanup">Cleanup</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>infrastructure/cdk
+cdk destroy
+</code></pre></div></div>
+
+<hr />
+
+<p><a href="07-observability.html">Part 7: Observability &amp; Troubleshooting →</a></p>
+
+<p><a href="08-wrap-up.html">Part 8: What We’ve Learned &amp; Teardown →</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

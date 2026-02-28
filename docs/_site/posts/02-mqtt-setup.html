@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 2: Why MQTT for IoT Communication</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-2-why-mqtt-for-iot-communication">Part 2: Why MQTT for IoT Communication</h1>
+
+<p>Now that our M5Stick is working, we need a way for it to talk to our AI agents. MQTT is the de facto messaging protocol for IoT devices. Many messaging services use this as standard - I was using Solace previously without even knowing it. MQTT stands for Message Queuing Telemetry Transport.</p>
+
+<h2 id="why-not-just-use-https-like-everything-else">Why not just use HTTPS like everything else?</h2>
+
+<p><strong>HTTPS is great for web browsers, not so great for IoT:</strong></p>
+<ul>
+  <li>Heavy overhead (TLS handshakes, HTTP headers)</li>
+  <li>Request-response only (no real-time updates)</li>
+  <li>Battery killer for small devices</li>
+  <li>Overkill for simple messages like “turn blue”</li>
+</ul>
+
+<p><strong>MQTT is built for IoT:</strong></p>
+<ul>
+  <li>Lightweight (2-byte headers)</li>
+  <li>Publish-subscribe (devices can listen for commands)</li>
+  <li>Battery friendly (persistent connections)</li>
+  <li>Perfect for simple messages</li>
+</ul>
+
+<h2 id="mqtt-packet-structure">MQTT Packet Structure</h2>
+
+<p>Here’s what an MQTT message actually looks like:</p>
+
+<p><img src="/diagrams/mqtt-packet-diagram.svg" alt="MQTT Packet Structure" /></p>
+
+<p>I always remember the saying Keep It Simple Stupid (KISS) - here we have just enough information to get the message where it needs to go, nothing more.</p>
+
+<h2 id="our-use-case">Our Use Case</h2>
+
+<p>For our Physical AI demo:</p>
+<ul>
+  <li><strong>Topic</strong>: <code class="language-plaintext highlighter-rouge">robotinc/device/command</code></li>
+  <li><strong>Payload</strong>: <code class="language-plaintext highlighter-rouge">{"action": "color", "value": "blue"}</code></li>
+  <li><strong>QoS</strong>: 1 (at least once delivery)</li>
+</ul>
+
+<p>Our M5Stick will subscribes to the command topic, receives the color change request, updates its screen, and publishes back a confirmation.</p>
+
+<h2 id="lessons-learned">Lessons Learned</h2>
+
+<ul>
+  <li>Dusting off your Mac mini and expecting it to run is ambitious</li>
+  <li>Not all USB to USB-C cables are created equal. I quickly found out that every USB to USB-C cable in the building was for power only. A data cable is needed. Nothing a visit to Amazon didn’t fix.</li>
+  <li><strong>Arduino debugging basics</strong>: Set Serial Monitor baud rate to 115200 (Tools → Serial Monitor). Use <code class="language-plaintext highlighter-rouge">Serial.println()</code> for debug output.</li>
+  <li><strong>M5Stick connection issues</strong>: If upload fails, try different USB ports, restart Arduino IDE, or press the reset button on M5Stick during upload.</li>
+</ul>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<p><a href="03-aws-iot-setup.html">Part 3: Connecting to AWS IoT Core →</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

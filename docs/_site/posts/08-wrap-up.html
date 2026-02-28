@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 8: Wrap Up</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-8-what-weve-learned--teardown">Part 8: What We’ve Learned &amp; Teardown</h1>
+
+<h2 id="what-we-built">What We Built</h2>
+
+<p><img src="assets/agent-demo.svg" alt="Agent Demo" /></p>
+
+<p>Did we over-engineer a light switch? Absolutely. But along the way:</p>
+
+<p><strong>Hardware</strong>: Dusted off an M5Stick, discovered most USB-C cables are lies (power-only), and got an ESP32 to listen to MQTT commands.</p>
+
+<p><strong>Security</strong>: Moved from a public MQTT broker (hello, internet strangers) to AWS IoT Core with X.509 certificates. Because authentication matters, even for LED screens.</p>
+
+<p><strong>AI Layer</strong>: Built a multi-agent system with Bedrock Nova Lite and Strands. The agent understands “turn it ocean blue” and doesn’t hallucinate RGB values, thanks to tools and the Python <code class="language-plaintext highlighter-rouge">color</code> library.</p>
+
+<p><strong>Edge Deployment</strong>: Automated everything with CDK. One <code class="language-plaintext highlighter-rouge">cdk deploy</code> creates VPC, EC2, Greengrass, DynamoDB, Lambda, IoT Rules, and pushes a Docker image. Infrastructure as code is satisfying when it works first time.</p>
+
+<p><strong>The Result</strong>: Natural language controls physical hardware. “Make it sunset orange” → agent thinks → MQTT publish → screen changes. Physical AI in action.</p>
+
+<p><strong>Key Lessons:</strong></p>
+
+<ol>
+  <li><strong>Physical AI is different</strong>: Tools prevent hallucination, state must be verified</li>
+  <li><strong>Edge + Cloud works</strong>: Low latency at the edge, AI inference in the cloud</li>
+  <li><strong>Infrastructure as Code</strong>: CDK makes deployments repeatable</li>
+  <li><strong>Hybrid approach</strong>: Greengrass for connectivity, Docker for flexibility</li>
+</ol>
+
+<p>You now have the foundation to build Physical AI applications that bridge digital and physical worlds.</p>
+
+<h2 id="teardown">Teardown</h2>
+
+<p>To avoid ongoing charges:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cd </span>infrastructure/cdk
+cdk destroy
+
+<span class="c"># Confirm when prompted</span>
+<span class="c"># Removes: EC2, VPC, DynamoDB, Lambda, ECR, IoT Thing, certificates</span>
+</code></pre></div></div>
+
+<p><strong>Cost Reality</strong>: ~£10/month if left running (t4g.small + Bedrock usage). Always destroy when done.</p>
+
+<hr />
+
+<h2 id="next-steps">Next Steps</h2>
+
+<p>Consider extending this project:</p>
+
+<ul>
+  <li><strong>Multiple Devices</strong>: Scale to control many M5Sticks</li>
+  <li><strong>Custom Tools</strong>: Add more agent capabilities (temperature, motion, etc.)</li>
+  <li><strong>Monitoring</strong>: CloudWatch dashboards and alarms</li>
+  <li><strong>CI/CD</strong>: Automate deployments with GitHub Actions</li>
+  <li><strong>Multi-Region</strong>: Deploy to multiple edge locations</li>
+  <li><strong>Production Hardening</strong>: Add error recovery, health checks, auto-scaling</li>
+</ul>
+
+<h2 id="resources">Resources</h2>
+
+<ul>
+  <li><a href="https://docs.aws.amazon.com/iot/">AWS IoT Core Documentation</a></li>
+  <li><a href="https://docs.aws.amazon.com/greengrass/">AWS IoT Greengrass Documentation</a></li>
+  <li><a href="https://strandsagents.com/latest/documentation/docs/">Strands Agents Documentation</a></li>
+  <li><a href="https://docs.aws.amazon.com/bedrock/">Amazon Bedrock Documentation</a></li>
+  <li><a href="https://docs.aws.amazon.com/cdk/">AWS CDK Documentation</a></li>
+</ul>
+
+<hr />
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

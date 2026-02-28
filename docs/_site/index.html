@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robotinc - Physical AI Demo</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="robotinc-building-physical-ai-with-aws">Robotinc: Building Physical AI with AWS</h1>
+
+<blockquote>
+  <p><em>“The next frontier of AI isn’t just understanding the world, it’s acting within it.”</em></p>
+</blockquote>
+
+<p>Inspired by AWS’s vision for Physical AI, this project combines IoT hardware, edge processing, and cloud AI to build a system where agents perceive, reason, and act in the real world.</p>
+
+<p><strong>The Goal</strong>: Introduce ourselves to AI that controls physical hardware through natural language. Keeping the hardware simple; an ESP32 board with an LED screen. What’s more interesting is agents in the cloud that understand intent, make decisions, and trigger real-world actions.</p>
+
+<p>We’re building this using IoT Core and Greengrass and Strands Agents in AWS.</p>
+
+<h2 id="how-it-works">How It Works</h2>
+
+<p>Tell an AI agent what you want, and it makes hardware do it.</p>
+
+<p><img src="assets/agent-demo.svg" alt="Agent Demo" /></p>
+
+<p><img src="/diagrams/flow-diagram.svg" alt="Flow Diagram" /></p>
+
+<h2 id="what-youll-need">What You’ll Need</h2>
+
+<ul>
+  <li><strong>AWS Account</strong>: With the bills payers permissions</li>
+  <li><strong>M5Stick-C Plus</strong>: Or equivalent ESP32 development board</li>
+  <li><strong>AWS CLI</strong>: Configured with credentials (sufficent to build)</li>
+  <li><strong>Node.js 18+</strong>: For AWS CDK</li>
+  <li><strong>Docker or Podman</strong>: For building container images</li>
+  <li><strong>Basic Command Line</strong>: some bash/terminal knowledge</li>
+</ul>
+
+<h2 id="blog-posts">Blog Posts</h2>
+
+<ul>
+  <li><a href="posts/01-m5stick-setup.html">Part 1: Setting Up the M5Stick Device</a></li>
+  <li><a href="posts/02-mqtt-setup.html">Part 2: MQTT Setup</a></li>
+  <li><a href="posts/03-aws-iot-setup.html">Part 3: AWS IoT Setup</a></li>
+  <li><a href="posts/04-aws-iot-core.html">Part 4: Moving to AWS IoT Core with Certificates</a></li>
+  <li><a href="posts/05-strands-agents.html">Part 5: Building with Strands Agents</a></li>
+  <li><a href="posts/06-edge-deployment.html">Part 6: Edge Deployment with CDK and Greengrass</a></li>
+  <li><a href="posts/07-observability.html">Part 7: Observability &amp; Troubleshooting (Bonus)</a></li>
+  <li><a href="posts/08-wrap-up.html">Part 8: What We’ve Learned &amp; Teardown</a></li>
+</ul>
+
+<h2 id="code">Code</h2>
+
+<p><a href="https://github.com/jakesky45/Robotinc">GitHub Repository</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+package-lock.json
+
+# CDK
+cdk.out/
+*.js
+*.d.ts
+!jest.config.js
+
+# Jekyll
+_site/
+.jekyll-cache/
+.sass-cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.zip
+*.cast
+*.gif

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 3: Making M5Stick Talk MQTT</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-3-making-m5stick-talk-mqtt">Part 3: Making M5Stick Talk MQTT</h1>
+
+<p>Now we need to upgrade our M5Stick from just showing a blue screen to actually listening for MQTT commands and responding to them. Transforming our simple blue screen into a device that:</p>
+
+<ul>
+  <li>Connects to WiFi</li>
+  <li>Subscribes to MQTT topic <code class="language-plaintext highlighter-rouge">robotinc/device/command</code></li>
+  <li>Changes screen colour based on received commands</li>
+  <li>Publishes confirmation messages back</li>
+</ul>
+
+<h2 id="mqtt-broker-testmosquittoorg">MQTT Broker: test.mosquitto.org</h2>
+
+<p>We’re using <code class="language-plaintext highlighter-rouge">test.mosquitto.org</code> - a free public MQTT broker provided by the Eclipse Foundation. Think of it as the “hello world” of MQTT:</p>
+
+<ul>
+  <li><strong>Free</strong>: No signup, no configuration needed</li>
+  <li><strong>Public</strong>: Anyone can use it (not secure, but perfect for testing)</li>
+  <li><strong>Reliable</strong>: Been running for years, used by thousands of IoT developers</li>
+  <li><strong>Simple</strong>: Just point your device at it and start sending messages</li>
+</ul>
+
+<p>It’s like a village notice board - you can post messages and read what others have posted. Perfect for learning MQTT basics before moving to prod.</p>
+
+<h2 id="m5stick-code">M5Stick Code</h2>
+
+<p>The complete code is nothing ground braking, it’s available here: <code class="language-plaintext highlighter-rouge">devices/m5stick/mqtt_color_control.ino</code></p>
+
+<p>Key configuration you’ll need to update:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// WiFi credentials</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">ssid</span> <span class="o">=</span> <span class="s">"YOUR_WIFI_NAME"</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"YOUR_WIFI_PASSWORD"</span><span class="p">;</span>
+
+<span class="c1">// MQTT settings - using public broker for simplicity</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">mqtt_server</span> <span class="o">=</span> <span class="s">"test.mosquitto.org"</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">device_id</span> <span class="o">=</span> <span class="s">"robotinc-m5stick-001"</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">command_topic</span> <span class="o">=</span> <span class="s">"robotinc/device/command"</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">status_topic</span> <span class="o">=</span> <span class="s">"robotinc/device/status"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<h2 id="required-libraries">Required Libraries</h2>
+
+<p>Install these in Arduino IDE:</p>
+<ol>
+  <li><strong>PubSubClient</strong> (for MQTT)</li>
+  <li><strong>ArduinoJson</strong> (for parsing commands)</li>
+</ol>
+
+<h2 id="testing">Testing</h2>
+
+<p>Upload the code and test with any MQTT client or online tool:</p>
+
+<p><strong>To send commands:</strong></p>
+<ul>
+  <li><strong>Topic</strong>: <code class="language-plaintext highlighter-rouge">robotinc/device/command</code></li>
+  <li><strong>Message</strong>: <code class="language-plaintext highlighter-rouge">{"action":"color","value":"blue"}</code></li>
+</ul>
+
+<p><strong>To see responses:</strong></p>
+<ul>
+  <li><strong>Subscribe to</strong>: <code class="language-plaintext highlighter-rouge">robotinc/device/status</code></li>
+  <li><strong>You’ll see</strong>: <code class="language-plaintext highlighter-rouge">{"status":"Device screen set to blue"}</code></li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  if (color == "blue") colorCode = TFT_BLUE;
+  else if (color == "red") colorCode = TFT_RED;
+  else if (color == "green") colorCode = TFT_GREEN;
+  else if (color == "yellow") colorCode = TFT_YELLOW;
+</code></pre></div></div>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<p>Now that basic MQTT works with a public broker, we need to move to production-grade infrastructure with AWS IoT Core and proper security.</p>
+
+<h2 id="lessons-learned">Lessons Learned</h2>
+<ul>
+  <li>You have so many libraries availalbe to inspire proeject in public libraries</li>
+  <li>AWS IOT core does have its own MQTT client, but this requires secure connections</li>
+  <li>Spending time on color vs colour isnt time well spent</li>
+</ul>
+
+<p><a href="04-aws-iot-core.html">Part 4: Moving to AWS IoT Core with Certificates →</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

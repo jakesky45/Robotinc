@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 4: Moving to AWS IoT Core with Certificates</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-4-moving-to-aws-iot-core-with-certificates">Part 4: Moving to AWS IoT Core with Certificates</h1>
+
+<p>Now that we have basic MQTT working with a public broker, it’s time to move to production-grade infrastructure. AWS IoT Core provides secure, scalable MQTT with proper device authentication.</p>
+
+<h2 id="why-aws-iot-core">Why AWS IoT Core?</h2>
+
+<ul>
+  <li>Each device has unique certificates</li>
+  <li>All communication is encrypted</li>
+  <li>Built-in integration with other AWS services</li>
+  <li>Enterprise-grade security and scaling</li>
+</ul>
+
+<h2 id="setting-up-aws-iot-core">Setting up AWS IoT Core</h2>
+
+<h3 id="step-1-create-a-thing">Step 1: Create a Thing</h3>
+
+<ol>
+  <li>Go to AWS IoT Console → Manage → Things</li>
+  <li>Click “Create things” → “Create single thing”</li>
+  <li>Name: <code class="language-plaintext highlighter-rouge">robotinc-m5stick-001</code></li>
+  <li>Click “Next” → “Auto-generate a new certificate”</li>
+  <li><strong>Important</strong>: When asked for Platform and SDK, select:
+    <ul>
+      <li><strong>Platform</strong>: Linux/macOS</li>
+      <li><strong>SDK</strong>: C++ (or just skip this - we’re using Arduino libraries)</li>
+    </ul>
+  </li>
+  <li>Download all three files:
+    <ul>
+      <li><strong>Device certificate</strong> (<code class="language-plaintext highlighter-rouge">.pem.crt</code>) - Your device’s unique identity</li>
+      <li><strong>Private key</strong> (<code class="language-plaintext highlighter-rouge">.pem.key</code>) - Proves your device owns the certificate</li>
+      <li><strong>Root CA certificate</strong> - Validates that AWS IoT is legitimate</li>
+    </ul>
+  </li>
+  <li>Click “Done”</li>
+</ol>
+
+<p><strong>Certificate refresher:</strong></p>
+<ul>
+  <li>Device certificate = Your passport (who you are)</li>
+  <li>Private key = Your signature (proves it’s really you)</li>
+  <li>Root CA = Government authority (proves the passport is real)</li>
+</ul>
+
+<h3 id="step-2-create-a-policy">Step 2: Create a Policy</h3>
+
+<p>This policy defines what your device is allowed to do, permissions for your device’s certificate.</p>
+
+<ol>
+  <li>Go to AWS IoT Console → Secure → Policies</li>
+  <li>Click “Create policy”</li>
+  <li>Name: <code class="language-plaintext highlighter-rouge">RobotincDevicePolicy</code></li>
+  <li>Add these policy statements:</li>
+</ol>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"Version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2012-10-17"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"Statement"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"Effect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Allow"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"Action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"iot:Connect"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"Resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:iot:*:*:client/robotinc-*"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"Effect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Allow"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"Action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"iot:Subscribe"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"Resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:iot:*:*:topicfilter/robotinc/*"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"Effect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Allow"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"Action"</span><span class="p">:</span><span class="w"> </span><span class="s2">"iot:Publish"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"Resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"arn:aws:iot:*:*:topic/robotinc/*"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h3 id="step-3-attach-policy-to-certificate">Step 3: Attach Policy to Certificate</h3>
+
+<ol>
+  <li>Go to AWS IoT Console → Secure → Certificates</li>
+  <li>Click on your certificate</li>
+  <li>Actions → Attach policy → Select <code class="language-plaintext highlighter-rouge">RobotincDevicePolicy</code></li>
+  <li>Actions → Attach thing → Select <code class="language-plaintext highlighter-rouge">robotinc-m5stick-001</code></li>
+</ol>
+
+<h2 id="updated-m5stick-code">Updated M5Stick Code</h2>
+
+<p>The complete AWS IoT code is available: <a href="../../m5stick/aws_iot_color_control.ino">aws_iot_color_control.ino</a></p>
+
+<h3 id="step-1-get-your-aws-iot-endpoint">Step 1: Get Your AWS IoT Endpoint</h3>
+
+<p>First, you need your AWS IoT endpoint URL. Get it using:</p>
+
+<p><strong>AWS Console Method:</strong></p>
+<ol>
+  <li>Go to AWS IoT Console → Settings</li>
+  <li>Copy the “Device data endpoint” (looks like <code class="language-plaintext highlighter-rouge">xxxxx-ats.iot.eu-west-2.amazonaws.com</code>)</li>
+</ol>
+
+<p><strong>AWS CLI Method:</strong></p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>aws iot describe-endpoint <span class="nt">--endpoint-type</span> iot:Data-ATS
+</code></pre></div></div>
+
+<h3 id="step-2-replace-certificates-in-arduino-code">Step 2: Replace Certificates in Arduino Code</h3>
+
+<p><strong>IMPORTANT</strong>: You must replace the placeholder certificates with your actual certificates downloaded in Step 1.</p>
+
+<p>Open the Arduino code at <code class="language-plaintext highlighter-rouge">m5stick/aws_iot_color_control.ino</code> and find these sections:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// AWS IoT settings - REPLACE WITH YOUR ENDPOINT</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">aws_endpoint</span> <span class="o">=</span> <span class="s">"your-endpoint-ats.iot.us-east-1.amazonaws.com"</span><span class="p">;</span>
+<span class="k">const</span> <span class="kt">int</span> <span class="n">aws_port</span> <span class="o">=</span> <span class="mi">8883</span><span class="p">;</span>
+
+<span class="c1">// Certificates - REPLACE WITH YOUR ACTUAL CERTIFICATES</span>
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">root_ca</span> <span class="o">=</span> <span class="s">R"EOF(
+-----BEGIN CERTIFICATE-----
+[PASTE YOUR ROOT CA CERTIFICATE HERE]
+-----END CERTIFICATE-----
+)EOF"</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">device_cert</span> <span class="o">=</span> <span class="s">R"EOF(
+-----BEGIN CERTIFICATE-----
+[PASTE YOUR DEVICE CERTIFICATE HERE]
+-----END CERTIFICATE-----
+)EOF"</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">private_key</span> <span class="o">=</span> <span class="s">R"EOF(
+-----BEGIN RSA PRIVATE KEY-----
+[PASTE YOUR PRIVATE KEY HERE]
+-----END RSA PRIVATE KEY-----
+)EOF"</span><span class="p">;</span>
+</code></pre></div></div>
+
+<p><strong>How to replace:</strong></p>
+<ol>
+  <li><strong>AWS Endpoint</strong>: Replace <code class="language-plaintext highlighter-rouge">your-endpoint-ats.iot.us-east-1.amazonaws.com</code> with your actual endpoint</li>
+  <li><strong>Root CA</strong>: Open your downloaded Root CA file, copy all content, paste between the ROOT CA markers</li>
+  <li><strong>Device Certificate</strong>: Open your <code class="language-plaintext highlighter-rouge">.pem.crt</code> file, copy all content, paste between the DEVICE CERT markers</li>
+  <li><strong>Private Key</strong>: Open your <code class="language-plaintext highlighter-rouge">.pem.key</code> file, copy all content, paste between the PRIVATE KEY markers</li>
+</ol>
+
+<p><strong>Important</strong>: Keep the <code class="language-plaintext highlighter-rouge">R"EOF(</code> and <code class="language-plaintext highlighter-rouge">)EOF"</code> markers - they tell Arduino this is a raw string.</p>
+
+<h2 id="certificate-management">Certificate Management</h2>
+
+<p><strong>The Challenge</strong>: Embedding certificates in Arduino code is messy. You end up with hundreds of lines of certificate text in your code.</p>
+
+<p>For this demo, embedding certificates works but isn’t production-ready.</p>
+
+<h2 id="testing-with-aws-iot">Testing with AWS IoT</h2>
+
+<ol>
+  <li>Upload the updated code with your certificates</li>
+  <li>Go to AWS IoT Console → Test → MQTT test client</li>
+  <li><strong>Subscribe to</strong>: <code class="language-plaintext highlighter-rouge">robotinc/device/status/robotinc-m5stick-001</code></li>
+  <li><strong>Power on your M5Stick</strong> - you should see the “online” status message</li>
+  <li><strong>Publish to</strong>: <code class="language-plaintext highlighter-rouge">robotinc/device/command/robotinc-m5stick-001</code></li>
+  <li><strong>Message</strong>: <code class="language-plaintext highlighter-rouge">{"action":"color","value":"blue"}</code></li>
+</ol>
+
+<p><strong>Note</strong>: You’ll only see status messages when:</p>
+<ul>
+  <li>The device first connects (“online” message)</li>
+  <li>The device responds to color commands</li>
+  <li>The device reconnects after losing connection</li>
+</ul>
+
+<p><strong>Tip</strong>: If you don’t see the initial “online” message, reset your M5Stick while subscribed to the status topic.</p>
+
+<h3 id="debugging-connection-issues">Debugging Connection Issues</h3>
+
+<p><strong>Arduino debugging for AWS IoT</strong>: Use Serial Monitor (115200 baud) to see connection status. Common error codes:</p>
+<ul>
+  <li><strong>-2</strong>: TLS/certificate issue - check certificate format and validity</li>
+  <li><strong>-4</strong>: Connection timeout - check WiFi, endpoint URL, or firewall</li>
+  <li><strong>-5</strong>: Connection refused - check device policy permissions</li>
+</ul>
+
+<p>You should see your device respond securely through AWS IoT Core!</p>
+
+<h2 id="monitoring-with-cloudwatch">Monitoring with CloudWatch</h2>
+
+<p>One of the benefits of AWS IoT Core is built-in monitoring. Let’s check what metrics we can see:</p>
+
+<ol>
+  <li>Go to <strong>CloudWatch Console</strong> → <strong>Metrics</strong> → <strong>AWS/IoT</strong></li>
+  <li>Look for metrics like:
+    <ul>
+      <li><strong>Connect.Success</strong> - Device connections</li>
+      <li><strong>PublishIn.Success</strong> - Messages received by AWS IoT</li>
+      <li><strong>PublishOut.Success</strong> - Messages sent to devices</li>
+      <li><strong>Subscribe.Success</strong> - Topic subscriptions</li>
+    </ul>
+  </li>
+  <li>You can also check <strong>AWS IoT Console</strong> → <strong>Monitor</strong> for device-specific metrics</li>
+</ol>
+
+<p><strong>What you should see:</strong></p>
+<ul>
+  <li>Connection events when your M5Stick powers on</li>
+  <li>Publish events when you send color commands</li>
+  <li>Publish events when your device responds with status</li>
+</ul>
+
+<p>This gives you real-time visibility into your IoT device communication, something you wont get with the moquitto MQTT broker. We’ll come back to observability in a later sections.</p>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<p>Now that we have secure device communication, we can add our AI layer to process natural language commands.</p>
+
+<p><a href="05-strands-agents.html">Part 5: Adding Bedrock Agents →</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

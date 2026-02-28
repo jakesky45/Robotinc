@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 7: Observability & Troubleshooting (Bonus)</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-7-observability--troubleshooting">Part 7: Observability &amp; Troubleshooting</h1>
+
+<p>Now that your Physical AI system is running, you need visibility into what’s happening. This bonus section covers debugging and monitoring your edge deployment.</p>
+
+<h2 id="agent-verbose-mode">Agent Verbose Mode</h2>
+
+<p>A simple way to debug is to add a verbose output to your code, but this is dependent on instrumenting your code. We have added some MQTT output to our code:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>agent-verbose
+
+<span class="o">[</span>VERBOSE MODE ENABLED]
+
+You: turn it blue
+<span class="o">[</span>AGENT] Processing color <span class="nb">command
+</span>Topic: robotinc/device/command/robotinc-m5stick-001
+Payload: <span class="o">{</span><span class="s2">"action"</span>:<span class="s2">"color"</span>,<span class="s2">"r"</span>:0,<span class="s2">"g"</span>:0,<span class="s2">"b"</span>:255<span class="o">}</span>
+Response: 200
+Agent: Changed device to blue
+</code></pre></div></div>
+
+<p>This shows:</p>
+<ul>
+  <li>MQTT topics and payloads</li>
+  <li>DynamoDB queries</li>
+  <li>HTTP response codes</li>
+  <li>Colour conversion details</li>
+</ul>
+
+<h2 id="bedrock-metrics-automatic">Bedrock Metrics (Automatic)</h2>
+
+<p>Bedrock automatically logs to CloudWatch, no instrumentation needed:</p>
+
+<ol>
+  <li><strong>CloudWatch Console</strong> → <strong>Metrics</strong> → <strong>AWS/Bedrock</strong></li>
+  <li>View:
+    <ul>
+      <li><strong>Invocations</strong>: Number of model calls</li>
+      <li><strong>InputTokens</strong>: Tokens sent to the model</li>
+      <li><strong>OutputTokens</strong>: Tokens generated</li>
+      <li><strong>InvocationLatency</strong>: Response time</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="bedrock-traces-optional">Bedrock Traces (Optional)</h2>
+
+<p>For detailed request/response traces, enable model invocation logging:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Enable logging to CloudWatch</span>
+aws bedrock put-model-invocation-logging-configuration <span class="se">\</span>
+  <span class="nt">--logging-config</span> <span class="s1">'{"cloudWatchConfig":{"logGroupName":"/aws/bedrock/modelinvocations","roleArn":"arn:aws:iam::ACCOUNT:role/BedrockLoggingRole"}}'</span>
+</code></pre></div></div>
+
+<p>Then view traces in CloudWatch Logs:</p>
+<ul>
+  <li>Full request/response payloads</li>
+  <li>Token counts</li>
+  <li>Latency breakdown</li>
+  <li>Model parameters</li>
+</ul>
+
+<p><strong>Note</strong>: This logs ALL Bedrock calls in your account, which can get expensive. Use it for debugging only.</p>
+
+<h2 id="iot-core-monitoring">IoT Core Monitoring</h2>
+
+<p>Test MQTT messages in real-time:</p>
+
+<ol>
+  <li><strong>AWS IoT Console</strong> → <strong>Test</strong> → <strong>MQTT test client</strong></li>
+  <li>Subscribe to <code class="language-plaintext highlighter-rouge">robotinc/#</code></li>
+  <li>See all device commands and status messages</li>
+</ol>
+
+<h2 id="greengrass-status">Greengrass Status</h2>
+
+<p>Check Greengrass health:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check if Greengrass is running</span>
+<span class="nb">sudo </span>systemctl status greengrass
+
+<span class="c"># View Greengrass logs</span>
+<span class="nb">sudo </span>journalctl <span class="nt">-u</span> greengrass <span class="nt">-f</span>
+
+<span class="c"># Check Greengrass version</span>
+<span class="nb">sudo</span> /greengrass/v2/bin/greengrass-cli <span class="nt">--version</span>
+</code></pre></div></div>
+
+<h2 id="common-issues">Common Issues</h2>
+
+<h3 id="agent-wont-start">Agent Won’t Start</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check Docker is running</span>
+docker ps
+
+<span class="c"># Check ECR authentication</span>
+aws ecr get-login-password <span class="nt">--region</span> eu-west-2
+
+<span class="c"># Pull image manually</span>
+docker pull &lt;image-uri&gt;
+</code></pre></div></div>
+
+<h3 id="device-not-responding">Device Not Responding</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check IoT connectivity</span>
+aws iot describe-endpoint <span class="nt">--endpoint-type</span> iot:Data-ATS
+
+<span class="c"># Test MQTT publish</span>
+aws iot-data publish <span class="se">\</span>
+  <span class="nt">--topic</span> robotinc/device/command/robotinc-m5stick-001 <span class="se">\</span>
+  <span class="nt">--payload</span> <span class="s1">'{"action":"color","r":255,"g":0,"b":0}'</span> <span class="se">\</span>
+  <span class="nt">--cli-binary-format</span> raw-in-base64-out
+</code></pre></div></div>
+
+<h3 id="dynamodb-not-logging">DynamoDB Not Logging</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Check Lambda function logs</span>
+aws logs <span class="nb">tail</span> /aws/lambda/RobotincStack-DeviceStateProcessor <span class="nt">--follow</span>
+
+<span class="c"># Check IoT Rule</span>
+aws iot get-topic-rule <span class="nt">--rule-name</span> RobotincDeviceStateRule
+</code></pre></div></div>
+
+<h2 id="cost-monitoring">Cost Monitoring</h2>
+
+<p>Track your spending:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># View current month costs</span>
+aws ce get-cost-and-usage <span class="se">\</span>
+  <span class="nt">--time-period</span> <span class="nv">Start</span><span class="o">=</span>2024-01-01,End<span class="o">=</span>2024-01-31 <span class="se">\</span>
+  <span class="nt">--granularity</span> MONTHLY <span class="se">\</span>
+  <span class="nt">--metrics</span> BlendedCost <span class="se">\</span>
+  <span class="nt">--group-by</span> <span class="nv">Type</span><span class="o">=</span>SERVICE
+</code></pre></div></div>
+
+<p>Key cost drivers:</p>
+<ul>
+  <li><strong>EC2 t4g.small</strong>: ~£10/month</li>
+  <li><strong>Bedrock Nova Lite</strong>: ~$0.0006 per 1K tokens</li>
+  <li><strong>IoT Core</strong>: First 1M messages free</li>
+  <li><strong>DynamoDB</strong>: On-demand pricing</li>
+</ul>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<ul>
+  <li>Set up CloudWatch alarms for high costs</li>
+  <li>Create dashboards for system health</li>
+  <li>Add custom metrics from your agent</li>
+  <li>
+    <h2 id="implement-distributed-tracing-with-x-rayß">Implement distributed tracing with X-Rayß</h2>
+  </li>
+</ul>
+
+<p><a href="06-edge-deployment.html">← Back to Part 6</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

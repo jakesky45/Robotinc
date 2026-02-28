@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 1: Setting up M5Stick C Plus</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-1-setting-up-m5stick-c-plus">Part 1: Setting up M5Stick C Plus</h1>
+
+<p>The M5Stick C Plus is a compact ESP32-based IoT device with a built-in screen, battery, and WiFi. It’s cheap (~£30), easy to program, and perfect for prototyping Physical AI systems.</p>
+
+<p><img src="/diagrams/m5.png" alt="M5Stick C Plus" width="33%" /></p>
+
+<h2 id="what-youll-need">What You’ll Need</h2>
+
+<ul>
+  <li>M5Stick C Plus or ESP32 alternative</li>
+  <li>USB-C cable (data cable, not power-only)</li>
+  <li>Arduino IDE 2.x</li>
+  <li>Mac/PC with Arduino IDE</li>
+  <li>M5StickC drivers (CP210x for Mac)</li>
+  <li>M5StickC library</li>
+</ul>
+
+<h2 id="step-1-install-arduino-ide">Step 1: Install Arduino IDE</h2>
+
+<p>Download from <a href="https://www.arduino.cc/en/software">arduino.cc</a></p>
+
+<h2 id="step-2-add-m5stack-board-support">Step 2: Add M5Stack Board Support</h2>
+
+<ol>
+  <li>Open Arduino IDE</li>
+  <li>Go to <strong>File → Preferences</strong></li>
+  <li>Add to “Additional Board Manager URLs”:
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
+</code></pre></div>    </div>
+  </li>
+  <li>Go to <strong>Tools → Board → Boards Manager</strong></li>
+  <li>Search “M5Stack” and install</li>
+</ol>
+
+<h2 id="step-3-install-m5stickcplus-library">Step 3: Install M5StickCPlus Library</h2>
+
+<ol>
+  <li>Go to <strong>Sketch → Include Library → Manage Libraries</strong></li>
+  <li>Search “M5StickCPlus”</li>
+  <li>Install the library</li>
+</ol>
+
+<h2 id="step-4-basic-blue-screen-test">Step 4: Basic Blue Screen Test</h2>
+
+<p>Create new sketch and paste:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">#include</span> <span class="cpf">&lt;M5StickCPlus.h&gt;</span><span class="cp">
+</span>
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">M5</span><span class="p">.</span><span class="n">begin</span><span class="p">();</span>
+  <span class="n">M5</span><span class="p">.</span><span class="n">Lcd</span><span class="p">.</span><span class="n">setRotation</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+  <span class="n">M5</span><span class="p">.</span><span class="n">Lcd</span><span class="p">.</span><span class="n">fillScreen</span><span class="p">(</span><span class="n">TFT_BLUE</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">M5</span><span class="p">.</span><span class="n">update</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="step-5-upload-to-m5stick">Step 5: Upload to M5Stick</h2>
+
+<ol>
+  <li>Connect M5Stick via USB-C</li>
+  <li>Select <strong>Tools → Board → M5Stick-C-Plus</strong></li>
+  <li>Select <strong>Tools → Port</strong> (usually <code class="language-plaintext highlighter-rouge">/dev/cu.usbserial-*</code> on Mac)</li>
+  <li>Click <strong>Upload</strong> button</li>
+</ol>
+
+<p>Our M5Stick screen should turn blue!</p>
+
+<h2 id="lessons-learned">Lessons Learned</h2>
+
+<ul>
+  <li>Dusting off your Mac mini and expecting it to run is ambitious</li>
+  <li>Not all USB to USB-C cables are created equal. I quickly found out that every USB to USB-C cable in the building was for power only. A data cable is needed. Nothing a visit to Amazon didn’t fix.</li>
+  <li><strong>Arduino debugging basics</strong>: Set Serial Monitor baud rate to 115200 (Tools → Serial Monitor). Use <code class="language-plaintext highlighter-rouge">Serial.println()</code> for debug output.</li>
+  <li><strong>M5Stick connection issues</strong>: If upload fails, try different USB ports, restart Arduino IDE, or press the reset button on M5Stick during upload.</li>
+</ul>
+
+<h2 id="next-steps">Next Steps</h2>
+
+<p><a href="02-mqtt-setup.html">Part 2: Why MQTT for IoT Communication →</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Part 5: Building with Strands Agents</title>
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Robotinc</h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="/">Home</a> |
+      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
+      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
+      <a href="https://strandsagents.com/latest/">Strands</a> |
+      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
+      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 id="part-5-building-with-strands-agents">Part 5: Building with Strands Agents</h1>
+
+<p>We have secure device communication, but we’re still sending JSON. Let’s add the AI layer.</p>
+
+<p><strong>Model Choice: Amazon Nova Lite</strong></p>
+
+<p>Bedrock has many options:</p>
+<ul>
+  <li><strong>Nova Micro</strong>: Fast, cheap, not the sharpest tool in the box</li>
+  <li><strong>Nova Lite</strong>: Fast, cheap, smart enough</li>
+  <li><strong>Nova Pro</strong>: Overkill for “turn it blue”</li>
+  <li><strong>Claude</strong>: Excellent all rounder but arguably more pricey for continuous operation</li>
+</ul>
+
+<p>Nova Lite is the “just right” for device control.</p>
+
+<h2 id="strands-agents-sdk">Strands Agents SDK</h2>
+
+<p><a href="https://strandsagents.com/latest/documentation/docs/">Strands</a> is hitting the headlines, an open source SDK for building AI agents. AWS teams use it in production (Q Developer, Glue).</p>
+
+<p>Why Strands:</p>
+<ul>
+  <li>Code-first</li>
+  <li>Works with any Bedrock model</li>
+  <li>Deploy anywhere (local, Lambda, EC2, Greengrass)</li>
+</ul>
+
+<h2 id="the-goal">The Goal</h2>
+
+<p>Stop sending <code class="language-plaintext highlighter-rouge">{"action":"color","r":255,"g":0,"b":0}</code>. Start saying:</p>
+<ul>
+  <li>“Turn it ocean blue”</li>
+  <li>“Make it sunset orange”</li>
+  <li>“Show me the history”</li>
+</ul>
+
+<p>Agent handles intent, RGB conversion, and MQTT.</p>
+
+<h2 id="architecture">Architecture</h2>
+
+<p><img src="/diagrams/architecture.svg" alt="Architecture" /></p>
+
+<p>Flow:</p>
+<ol>
+  <li>Natural language → Bedrock</li>
+  <li>Colour extraction → specialised sub-agent</li>
+  <li>RGB conversion → Python <code class="language-plaintext highlighter-rouge">color</code> library</li>
+  <li>MQTT publish → AWS IoT Core</li>
+  <li>State queries → DynamoDB via IOT rules</li>
+</ol>
+
+<p><strong>State Logging via IoT Rules</strong></p>
+
+<p>IoT Rules are serverless event handlers. Our setup:</p>
+<ul>
+  <li>Rule: <code class="language-plaintext highlighter-rouge">SELECT * FROM 'robotinc/device/status/#'</code></li>
+  <li>Action: Invoke Lambda</li>
+  <li>Lambda: Write to DynamoDB</li>
+</ul>
+
+<p>Why DynamoDB? Agent can query “What colour is the device?” without tracking state itself. Devices publish, Lambda logs, agent queries. Clean separation.</p>
+
+<h2 id="multi-agent-pattern">Multi-Agent Pattern</h2>
+
+<p><strong>Main Agent</strong> routes requests to tools:</p>
+<ul>
+  <li>Colour commands → <code class="language-plaintext highlighter-rouge">color_control</code></li>
+  <li>Status requests → <code class="language-plaintext highlighter-rouge">device_status</code></li>
+  <li>History queries → <code class="language-plaintext highlighter-rouge">device_history</code></li>
+  <li>Help → <code class="language-plaintext highlighter-rouge">help_info</code></li>
+</ul>
+
+<p><strong>Why Tools Stop Hallucination</strong></p>
+
+<p>Without tools, LLMs make stuff up:</p>
+<ul>
+  <li>“The device is red” (it doesn’t know)</li>
+  <li>“I’ll set RGB(100, 150, 200)” (invented values)</li>
+  <li>“Success!” (command failed)</li>
+</ul>
+
+<p>With tools:</p>
+<ul>
+  <li>Device commands go through real MQTT publish</li>
+  <li>Status comes from DynamoDB queries</li>
+  <li>Colour conversion uses Python’s <code class="language-plaintext highlighter-rouge">color</code> library</li>
+  <li>Errors are real errors</li>
+</ul>
+
+<p>The agent can only do what its tools allow.</p>
+
+<p><strong>Colour Extraction Sub-Agent</strong></p>
+
+<p>Specialised agent extracts CSS/X11 colour names:</p>
+<ul>
+  <li>“colour of the sea” → “cyan”</li>
+  <li>“sunset orange” → “orange”</li>
+  <li>“forest green” → “forestgreen”</li>
+</ul>
+
+<p>Keeps the main agent focused on routing.</p>
+
+<h2 id="agent-implementation">Agent Implementation</h2>
+
+<p>The complete agent code is in <code class="language-plaintext highlighter-rouge">components/edge-agent/agent.py</code>. Here are the key implementation patterns:</p>
+
+<h3 id="prompt-engineering-with-xml">Prompt Engineering with XML</h3>
+
+<p>XML-structured prompts:</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;routing_rules&gt;</span>
+  <span class="nt">&lt;color_control&gt;</span>
+    <span class="nt">&lt;triggers&gt;</span>"turn", "make", "change", "set"<span class="nt">&lt;/triggers&gt;</span>
+    <span class="nt">&lt;tool&gt;</span>color_control<span class="nt">&lt;/tool&gt;</span>
+  <span class="nt">&lt;/color_control&gt;</span>
+<span class="nt">&lt;/routing_rules&gt;</span>
+
+<span class="nt">&lt;critical_rule&gt;</span>
+You MUST return ONLY the exact tool output.
+<span class="nt">&lt;/critical_rule&gt;</span>
+</code></pre></div></div>
+
+<p>XML works because LLMs parse structure better than prose. Plus it’s easy to version control.</p>
+
+<h3 id="guardrails">Guardrails</h3>
+
+<p>Physical AI needs constraints:</p>
+
+<p><strong>Tool-Based</strong>: Agent can only execute defined tools. No direct hardware access.</p>
+
+<p><strong>Output Validation</strong>:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;critical_rule&gt;
+You MUST return ONLY the exact tool output. 
+Do NOT add commentary.
+&lt;/critical_rule&gt;
+</code></pre></div></div>
+<p>Prevents inventing results.</p>
+
+<p><strong>Error Handling</strong>: Tools return real errors. Failed MQTT publishes are reported accurately.</p>
+
+<p><strong>State Verification</strong>: Device status from DynamoDB, not agent memory. Colour conversion uses deterministic library.</p>
+
+<h2 id="strands-vs-bedrock-agents-console">Strands vs Bedrock Agents Console</h2>
+
+<p><strong>Strands</strong>: Code-first, version control, deploy anywhere</p>
+
+<p><strong>Bedrock Console</strong>: Visual builder, quick prototyping, no code</p>
+
+<p>We chose Strands for developer experience and flexibility.</p>
+
+<h2 id="next-edge-deployment">Next: Edge Deployment</h2>
+
+<p>We’re done with local development. Time to deploy to the edge with CDK, Greengrass, and containers.</p>
+
+<p><a href="06-edge-deployment.html">Part 6: Edge Deployment with CDK and Greengrass →</a></p>
+
+  </main>
+
+  <footer>
+    <div class="container">
+    </div>
+  </footer>
+
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 30px;
+    }
+    main {
+      padding: 20px 0;
+    }
+  </style>
+</body>
+</html>
