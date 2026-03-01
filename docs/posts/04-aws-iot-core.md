@@ -38,7 +38,7 @@ Now that we have basic MQTT working with a public broker, it's time to move to p
 
 ### Step 2: Create a Policy
 
-This policy defines what your device is allowed to do, permissions for your device's certificate.
+This policy defines what your device is allowed to do i.e permissions for your device's certificate.
 
 1. Go to AWS IoT Console → Secure → Policies
 2. Click "Create policy"
@@ -135,8 +135,7 @@ const char* private_key = R"EOF(
 ## Certificate Management
 
 **The Challenge**: Embedding certificates in Arduino code is messy. You end up with hundreds of lines of certificate text in your code.
-
-For this demo, embedding certificates works but isn't production-ready.
+For this demo, embedding certificates works but this should be avoided in a prodiction system. 
 
 ## Testing with AWS IoT
 
@@ -149,7 +148,7 @@ For this demo, embedding certificates works but isn't production-ready.
 
 **Note**: You'll only see status messages when:
 - The device first connects ("online" message)
-- The device responds to color commands
+- The device responds to colour commands
 - The device reconnects after losing connection
 
 **Tip**: If you don't see the initial "online" message, reset your M5Stick while subscribed to the status topic.
@@ -178,10 +177,10 @@ One of the benefits of AWS IoT Core is built-in monitoring. Let's check what met
 
 **What you should see:**
 - Connection events when your M5Stick powers on
-- Publish events when you send color commands
+- Publish events when you send colour commands
 - Publish events when your device responds with status
 
-This gives you real-time visibility into your IoT device communication, something you wont get with the moquitto MQTT broker. We'll come back to observability in a later sections.
+This gives you real-time visibility into your IoT device communication, something you wont get with the moquitto MQTT broker. We'll come back to observability in a later section.
 
 ## Next Steps
 

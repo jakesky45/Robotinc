@@ -21,11 +21,11 @@ We're using `test.mosquitto.org` - a free public MQTT broker provided by the Ecl
 - **Reliable**: Been running for years, used by thousands of IoT developers
 - **Simple**: Just point your device at it and start sending messages
 
-It's like a village notice board - you can post messages and read what others have posted. Perfect for learning MQTT basics before moving to prod.
+It's like a village notice board - you can post messages and read what others have posted. Perfect for learning MQTT basics before moving to production.
 
 ## M5Stick Code
 
-The complete code is nothing ground braking, it's available here: `devices/m5stick/mqtt_color_control.ino`
+The complete code is nothing ground breaking, it's available here: `devices/m5stick/mqtt_color_control.ino`
 
 Key configuration you'll need to update:
 
@@ -71,8 +71,8 @@ Upload the code and test with any MQTT client or online tool:
 Now that basic MQTT works with a public broker, we need to move to production-grade infrastructure with AWS IoT Core and proper security.
 
 ## Lessons Learned
-- You have so many libraries availalbe to inspire proeject in public libraries
+- You have so many libraries available in public libraries to inspire your projects
 - AWS IOT core does have its own MQTT client, but this requires secure connections
-- Spending time on color vs colour isnt time well spent
+- Spending time on colour vs colour isn't time well spent
 
 [Part 4: Moving to AWS IoT Core with Certificates →](04-aws-iot-core.html)

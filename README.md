@@ -61,14 +61,14 @@ agent  # Start the AI agent or agent-verbose for some vebose MQTT logging
 
 Full tutorial series available at **[jakesky45.github.io/Robotinc](https://jakesky45.github.io/Robotinc/)**
 
-- **Part 1**: Introduction to Physical AI
-- **Part 2**: Setting up the M5Stick device
-- **Part 3**: MQTT basics with public broker
-- **Part 4**: AWS IoT Core with certificate authentication
-- **Part 5**: Building AI agents with Strands and Bedrock
-- **Part 6**: Edge deployment with CDK and Greengrass
-- **Part 7**: Observability and troubleshooting (bonus)
-- **Part 8**: What we've learned and teardown
+- Part 1: Setting Up the M5Stick Device
+- Part 2: MQTT Setup
+- Part 3: AWS IoT Setup
+- Part 4: Moving to AWS IoT Core with Certificates
+- Part 5: Building with Strands Agents
+- Part 6: Edge Deployment with CDK and Greengrass
+- Part 7: Observability & Troubleshooting (Bonus)
+- Part 8: What We've Learned & Teardown
 
 ## Tech Stack
 
@@ -77,7 +77,7 @@ Full tutorial series available at **[jakesky45.github.io/Robotinc](https://jakes
 - **Edge**: AWS IoT Greengrass V2, Docker containers
 - **Infrastructure**: AWS CDK (TypeScript), EC2 (t4g.small ARM64)
 - **Storage**: DynamoDB, ECR
-- **Hardware**: M5Stick-C Plus (ESP32)
+- **Hardware**: M5Stick-C Plus (ESP32)ß
 
 ## Cost
 

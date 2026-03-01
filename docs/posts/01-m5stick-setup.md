@@ -5,7 +5,7 @@ title: "Part 1: Setting up M5Stick C Plus"
 
 # Part 1: Setting up M5Stick C Plus
 
-The M5Stick C Plus is a compact ESP32-based IoT device with a built-in screen, battery, and WiFi. It's cheap (~£30), easy to program, and perfect for prototyping Physical AI systems.
+The M5Stick C Plus is a compact ESP32-based IoT device with a built-in screen, battery and WiFi. It's cheap (~£30), easy to program and perfect for prototyping Physical AI systems. The device can do far more (sensors, motion, networking), but we're keeping it basic to focus on the Physical AI concept itself. 
 
 <img src="../diagrams/m5.png" alt="M5Stick C Plus" width="33%">
 
@@ -68,7 +68,7 @@ Our M5Stick screen should turn blue!
 
 ## Lessons Learned
 
-- Dusting off your Mac mini and expecting it to run is ambitious
+- Dusting off my old Mac mini and expecting it to run was ambitious
 - Not all USB to USB-C cables are created equal. I quickly found out that every USB to USB-C cable in the building was for power only. A data cable is needed. Nothing a visit to Amazon didn't fix.
 - **Arduino debugging basics**: Set Serial Monitor baud rate to 115200 (Tools → Serial Monitor). Use `Serial.println()` for debug output.
 - **M5Stick connection issues**: If upload fails, try different USB ports, restart Arduino IDE, or press the reset button on M5Stick during upload.
