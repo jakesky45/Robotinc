@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .line { font-family: monospace; font-size: 14px; fill: #d4d4d4; }
+    .prompt { fill: #23d18b; }
+    .agent { fill: #3b8eea; }
+    .header { fill: #11a8cd; font-weight: bold; }
+    text { animation: fadeIn 0.3s ease-in; }
+  </style>
+  
+  <rect width="800" height="600" fill="#1e1e1e"/>
+  
+  <text x="20" y="30" class="line header">============================================================</text>
+  <text x="20" y="50" class="line header">  Robotinc IoT Edge Agent</text>
+  <text x="20" y="70" class="line header">  AI-Powered Device Control</text>
+  <text x="20" y="90" class="line header">============================================================</text>
+  
+  <text x="20" y="130" class="line">Commands: 'turn red', 'get status', 'show history', 'quit'</text>
+  <text x="20" y="150" class="line">------------------------------------------------------------</text>
+  
+  <text x="20" y="190" class="line prompt">You: change colour to pink</text>
+  <text x="20" y="210" class="line agent">Agent: The color has been successfully changed to pink.</text>
+  
+  <text x="20" y="250" class="line prompt">You: make it sunset orange</text>
+  <text x="20" y="270" class="line agent">Agent: Changed device to orange</text>
+  
+  <text x="20" y="310" class="line prompt">You: show history</text>
+  <text x="20" y="330" class="line agent">Agent: Recent history:</text>
+  <text x="20" y="350" class="line">2024-01-15T10:30:00: RGB(255, 165, 0)</text>
+  <text x="20" y="370" class="line">2024-01-15T10:25:00: RGB(255, 192, 203)</text>
+  <text x="20" y="390" class="line">2024-01-15T10:20:00: RGB(0, 128, 128)</text>
+  
+  <text x="20" y="430" class="line prompt">You: quit</text>
+  <text x="20" y="450" class="line agent">Shutting down agent...</text>
+</svg>

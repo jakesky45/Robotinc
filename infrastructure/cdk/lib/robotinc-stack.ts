@@ -35,6 +35,49 @@ export class RobotincStack extends cdk.Stack {
       platform: ecrAssets.Platform.LINUX_ARM64
     });
 
+    const componentVersion = '1.0.3';
+    const componentName = 'com.robotinc.EdgeAgent';
+
+    const componentRecipe = {
+      RecipeFormatVersion: '2020-01-25',
+      ComponentName: componentName,
+      ComponentVersion: componentVersion,
+      ComponentDescription: 'Robotinc Edge AI Agent',
+      ComponentPublisher: 'Robotinc',
+      ComponentConfiguration: {
+        DefaultConfiguration: {
+          accessControl: {
+            'aws.greengrass.ipc.mqttproxy': {
+              [`${componentName}:mqttproxy:1`]: {
+                policyDescription: 'Allows access to publish/subscribe to IoT Core',
+                operations: ['aws.greengrass#PublishToIoTCore', 'aws.greengrass#SubscribeToIoTCore'],
+                resources: ['*']
+              }
+            }
+          }
+        }
+      },
+      Manifests: [{
+        Platform: { os: 'linux', architecture: 'aarch64' },
+        Lifecycle: {
+          Run: {
+            Script: [
+              `HOME=/tmp aws ecr get-login-password --region ${this.region} | docker login --username AWS --password-stdin ${agentImage.imageUri.split('/')[0]}`,
+              `docker pull ${agentImage.imageUri}`,
+              `docker run --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}`
+            ].join(' && ')
+          }
+        }
+      }]
+    };
+
+    const greengrassComponent = new cdk.CfnResource(this, 'GreengrassComponent', {
+      type: 'AWS::GreengrassV2::ComponentVersion',
+      properties: {
+        InlineRecipe: JSON.stringify(componentRecipe)
+      }
+    });
+
     const deploymentBucket = new s3.Bucket(this, 'DeploymentBucket', {
       bucketName: `robotinc-deployment-${this.account}-${this.region}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -147,67 +190,53 @@ export class RobotincStack extends cdk.Stack {
       role: greengrassRole,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
       blockDevices: [{ deviceName: '/dev/xvda', volume: ec2.BlockDeviceVolume.ebs(20, { encrypted: true }) }],
-      requireImdsv2: true
+      requireImdsv2: true,
+      userData: ec2.UserData.forLinux()
     });
+
+    greengrassInstance.userData.addCommands(
+      '#!/bin/bash',
+      'set -e',
+      'yum update -y',
+      'yum install -y python3 python3-pip docker git unzip java-17-amazon-corretto-headless',
+      'systemctl start docker',
+      'systemctl enable docker',
+      'usermod -a -G docker ec2-user',
+      'usermod -a -G docker ssm-user || true',
+      'groupadd --system ggc_group || true',
+      'useradd --system --gid ggc_group ggc_user || true',
+      'usermod -a -G docker ggc_user',
+      `echo '#!/bin/bash' > /usr/local/bin/agent`,
+      `echo 'aws ecr get-login-password --region ${this.region} | docker login --username AWS --password-stdin ${agentImage.imageUri.split('/')[0]}' >> /usr/local/bin/agent`,
+      `echo 'docker run -it --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}' >> /usr/local/bin/agent`,
+      'chmod +x /usr/local/bin/agent',
+      `echo '#!/bin/bash' > /usr/local/bin/agent-verbose`,
+      `echo 'aws ecr get-login-password --region ${this.region} | docker login --username AWS --password-stdin ${agentImage.imageUri.split('/')[0]}' >> /usr/local/bin/agent-verbose`,
+      `echo 'docker run -it --rm --network host -e AWS_REGION=${this.region} -e VERBOSE=true ${agentImage.imageUri}' >> /usr/local/bin/agent-verbose`,
+      'chmod +x /usr/local/bin/agent-verbose',
+      'cd /tmp',
+      'curl -s https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip -o greengrass-nucleus-latest.zip',
+      'unzip -o greengrass-nucleus-latest.zip -d GreengrassInstaller',
+      `sudo -E java -Droot="/greengrass/v2" -Dlog.store=FILE -jar ./GreengrassInstaller/lib/Greengrass.jar --aws-region ${this.region} --thing-name robotinc-greengrass-core --thing-group-name robotinc-cores --component-default-user ggc_user:ggc_group --provision true --setup-system-service true --deploy-dev-tools true`,
+      'echo "Greengrass setup completed"'
+    );
 
     cdk.Tags.of(greengrassInstance).add('Greengrass', 'true');
 
-
-
-    const agentScript = `docker run -it --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}`;
-
-    const setupDocument = new cdk.CfnResource(this, 'GreengrassSetupDocument', {
-      type: 'AWS::SSM::Document',
+    const greengrassDeployment = new cdk.CfnResource(this, 'GreengrassDeployment', {
+      type: 'AWS::GreengrassV2::Deployment',
       properties: {
-        DocumentType: 'Command',
-        DocumentFormat: 'YAML',
-        Content: {
-          schemaVersion: '2.2',
-          description: 'Bootstrap and deploy Greengrass',
-          mainSteps: [{
-            action: 'aws:runShellScript',
-            name: 'setup',
-            inputs: {
-              runCommand: [
-                '#!/bin/bash',
-                'set -e',
-                'yum update -y',
-                'yum install -y python3 python3-pip docker git unzip java-17-amazon-corretto-headless',
-                'systemctl start docker',
-                'systemctl enable docker',
-                'usermod -a -G docker ec2-user',
-                'usermod -a -G docker ssm-user',
-                'groupadd --system ggc_group || true',
-                'useradd --system --gid ggc_group ggc_user || true',
-                'usermod -a -G docker ggc_user',
-                `echo '#!/bin/bash' > /usr/local/bin/agent`,
-                `echo 'aws ecr get-login-password --region ${this.region} | docker login --username AWS --password-stdin ${agentImage.imageUri.split('/')[0]}' >> /usr/local/bin/agent`,
-                `echo 'docker run -it --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}' >> /usr/local/bin/agent`,
-                'chmod +x /usr/local/bin/agent',
-                `echo '#!/bin/bash' > /usr/local/bin/agent-verbose`,
-                `echo 'aws ecr get-login-password --region ${this.region} | docker login --username AWS --password-stdin ${agentImage.imageUri.split('/')[0]}' >> /usr/local/bin/agent-verbose`,
-                `echo 'docker run -it --rm --network host -e AWS_REGION=${this.region} -e VERBOSE=true ${agentImage.imageUri}' >> /usr/local/bin/agent-verbose`,
-                'chmod +x /usr/local/bin/agent-verbose',
-                'cd /tmp',
-                'curl -s https://d2s8p88vqu9w66.cloudfront.net/releases/greengrass-nucleus-latest.zip -o greengrass-nucleus-latest.zip',
-                'unzip -o greengrass-nucleus-latest.zip -d GreengrassInstaller',
-                `sudo -E java -Droot="/greengrass/v2" -Dlog.store=FILE -jar ./GreengrassInstaller/lib/Greengrass.jar --aws-region ${this.region} --thing-name robotinc-greengrass-core --thing-group-name robotinc-cores --component-default-user ggc_user:ggc_group --provision true --setup-system-service true --deploy-dev-tools true`,
-                'echo "Setup completed"'
-              ]
-            }
-          }]
+        TargetArn: `arn:aws:iot:${this.region}:${this.account}:thinggroup/robotinc-cores`,
+        DeploymentName: 'RobotincAgentDeployment',
+        Components: {
+          [componentName]: {
+            ComponentVersion: componentVersion
+          }
         }
       }
     });
 
-    new cdk.CfnResource(this, 'GreengrassSetupAssociation', {
-      type: 'AWS::SSM::Association',
-      properties: {
-        Name: setupDocument.ref,
-        Targets: [{ Key: 'tag:Greengrass', Values: ['true'] }],
-        ApplyOnlyAtCronInterval: false
-      }
-    });
+    greengrassDeployment.node.addDependency(greengrassComponent);
 
 
 
