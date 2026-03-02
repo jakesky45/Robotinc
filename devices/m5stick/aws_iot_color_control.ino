@@ -1,4 +1,4 @@
-#include <M5StickCPlus.h>
+#include <M5StickCPlus2.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
@@ -38,11 +38,12 @@ WiFiClientSecure secureClient;
 PubSubClient client(secureClient);
 
 void setup() {
-  M5.begin();
-  M5.Lcd.setRotation(3);
-  M5.Lcd.fillScreen(TFT_BLACK);
-  M5.Lcd.setTextColor(TFT_WHITE);
-  M5.Lcd.println("Starting...");
+  auto cfg = M5.config();
+  StickCP2.begin(cfg);
+  StickCP2.Display.setRotation(3);
+  StickCP2.Display.fillScreen(TFT_BLACK);
+  StickCP2.Display.setTextColor(TFT_WHITE);
+  StickCP2.Display.println("Starting...");
   
   connectWiFi();
   setupAWS();
@@ -50,104 +51,65 @@ void setup() {
 }
 
 void loop() {
-  M5.update();
-  
-  if (!client.connected()) {
-    connectAWS();
-  }
+  StickCP2.update();
+  if (!client.connected()) connectAWS();
   client.loop();
-  
   delay(100);
 }
 
 void connectWiFi() {
   WiFi.begin(ssid, password);
-  M5.Lcd.print("Connecting WiFi");
-  
+  StickCP2.Display.print("WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    M5.Lcd.print(".");
+    StickCP2.Display.print(".");
   }
-  
-  M5.Lcd.println("\nWiFi Connected!");
+  StickCP2.Display.println("\nConnected!");
 }
 
 void setupAWS() {
   secureClient.setCACert(root_ca);
   secureClient.setCertificate(device_cert);
   secureClient.setPrivateKey(private_key);
-  
   client.setServer(aws_endpoint, aws_port);
   client.setCallback(onMqttMessage);
 }
 
 void connectAWS() {
-  while (!client.connected()) {
-    M5.Lcd.println("Connecting AWS IoT...");
-    
+  int attempts = 0;
+  while (!client.connected() && attempts < 3) {
+    StickCP2.Display.println("AWS IoT...");
     if (client.connect(device_id)) {
-      M5.Lcd.println("AWS IoT Connected!");
+      StickCP2.Display.println("Connected!");
       client.subscribe(command_topic.c_str());
-      
-      // Send "I'm alive" message
       client.publish(status_topic.c_str(), "{\"status\":\"online\"}");
     } else {
-      M5.Lcd.println("Failed, retrying...");
+      StickCP2.Display.print("Fail:");
+      StickCP2.Display.println(client.state());
+      attempts++;
       delay(5000);
     }
   }
 }
 
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
-  // Parse JSON command
   StaticJsonDocument<200> doc;
   deserializeJson(doc, payload, length);
   
-  String action = doc["action"];
-  
-  if (action == "color") {
-    // Check if RGB values are provided
-    if (doc.containsKey("r") && doc.containsKey("g") && doc.containsKey("b")) {
-      int r = doc["r"];
-      int g = doc["g"];
-      int b = doc["b"];
-      changeColorRGB(r, g, b);
-      
-      // Send confirmation
-      String response = "{\"status\":\"RGB(" + String(r) + "," + String(g) + "," + String(b) + ") set\"}";
-      client.publish(status_topic.c_str(), response.c_str());
-    } else {
-      // Fallback to color name
-      String value = doc["value"];
-      changeColor(value);
-      
-      // Send confirmation
-      String response = "{\"status\":\"Device screen set to " + value + "\"}";
-      client.publish(status_topic.c_str(), response.c_str());
-    }
+  if (doc["action"] == "color" && doc.containsKey("r")) {
+    int r = doc["r"], g = doc["g"], b = doc["b"];
+    uint16_t color = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+    StickCP2.Display.fillScreen(color);
+    StickCP2.Display.setTextColor(TFT_WHITE);
+    StickCP2.Display.setCursor(10, 10);
+    StickCP2.Display.print("RGB:");
+    StickCP2.Display.print(r);
+    StickCP2.Display.print(",");
+    StickCP2.Display.print(g);
+    StickCP2.Display.print(",");
+    StickCP2.Display.println(b);
+    
+    String resp = "{\"status\":\"RGB(" + String(r) + "," + String(g) + "," + String(b) + ") set\"}";
+    client.publish(status_topic.c_str(), resp.c_str());
   }
-}
-
-void changeColorRGB(int r, int g, int b) {
-  // Convert RGB to 16-bit color (RGB565)
-  uint16_t colorCode = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
-  
-  M5.Lcd.fillScreen(colorCode);
-  M5.Lcd.setTextColor(TFT_WHITE);
-  M5.Lcd.setCursor(10, 10);
-  M5.Lcd.println("RGB: " + String(r) + "," + String(g) + "," + String(b));
-}
-
-void changeColor(String color) {
-  uint16_t colorCode = TFT_BLACK;
-  
-  if (color == "blue") colorCode = TFT_BLUE;
-  else if (color == "red") colorCode = TFT_RED;
-  else if (color == "green") colorCode = TFT_GREEN;
-  else if (color == "yellow") colorCode = TFT_YELLOW;
-  
-  M5.Lcd.fillScreen(colorCode);
-  M5.Lcd.setTextColor(TFT_WHITE);
-  M5.Lcd.setCursor(10, 10);
-  M5.Lcd.println("Color: " + color);
 }
