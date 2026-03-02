@@ -92,7 +92,13 @@ export CDK_DOCKER=podman
 **Key Code:**
 
 ```typescript
-// t4g.small ARM64 - cost optimized
+// Build and push Docker image for ARM64
+const agentImage = new ecrAssets.DockerImageAsset(this, 'AgentImage', {
+  directory: path.join(__dirname, '../../../components/edge-agent'),
+  platform: ecrAssets.Platform.LINUX_ARM64
+});
+
+// EC2 instance for edge deployment
 const greengrassInstance = new ec2.Instance(this, 'GreengrassInstance', {
   vpc,
   instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL),
@@ -104,15 +110,11 @@ const greengrassInstance = new ec2.Instance(this, 'GreengrassInstance', {
   requireImdsv2: true
 });
 
-// Build and push Docker image for ARM64
-const agentImage = new ecrAssets.DockerImageAsset(this, 'AgentImage', {
-  directory: path.join(__dirname, '../../../components/edge-agent'),
-  platform: ecrAssets.Platform.LINUX_ARM64
-});
-
-// Create helper scripts on instance
+// UserData creates helper script at instance launch
 greengrassInstance.userData.addCommands(
-  `echo 'docker run -it --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}' > /usr/local/bin/agent`,
+  `echo '#!/bin/bash' > /usr/local/bin/agent`,
+  `echo 'aws ecr get-login-password --region ${this.region} | docker login --username AWS --password-stdin ${agentImage.imageUri.split('/')[0]}' >> /usr/local/bin/agent`,
+  `echo 'docker run -it --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}' >> /usr/local/bin/agent`,
   'chmod +x /usr/local/bin/agent'
 );
 ```
