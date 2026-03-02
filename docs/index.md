@@ -7,7 +7,7 @@ title: Robotinc - Physical AI Demo
 
 > *"The next frontier of AI isn't just understanding the world, it's acting within it."*
 
-Inspired by AWS's vision for Physical AI, this project combines IoT hardware, edge processing, and cloud AI to build a system where agents perceive, reason, and act in the real world.
+Inspired by AWS's vision for Physical AI, this project combines IoT hardware, edge processing and cloud AI to build a system where agents perceive, reason and act in the real world.
 
 **The Goal**: Introduce ourselves to AI that controls physical hardware through natural language. Keeping the hardware simple; an ESP32 board with an LED screen. What's more interesting is agents in the cloud that understand intent, make decisions, and trigger real-world actions.
 
