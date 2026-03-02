@@ -35,7 +35,7 @@ export class RobotincStack extends cdk.Stack {
       platform: ecrAssets.Platform.LINUX_ARM64
     });
 
-    const componentVersion = '1.0.3';
+    const componentVersion = '1.0.4';
     const componentName = 'com.robotinc.EdgeAgent';
 
     const componentRecipe = {
@@ -60,11 +60,11 @@ export class RobotincStack extends cdk.Stack {
       Manifests: [{
         Platform: { os: 'linux', architecture: 'aarch64' },
         Lifecycle: {
-          Run: {
+          Install: {
             Script: [
               `HOME=/tmp aws ecr get-login-password --region ${this.region} | docker login --username AWS --password-stdin ${agentImage.imageUri.split('/')[0]}`,
               `docker pull ${agentImage.imageUri}`,
-              `docker run --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}`
+              `echo "Agent image ready. Run 'agent' command to start."`
             ].join(' && ')
           }
         }
