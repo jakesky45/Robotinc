@@ -30,6 +30,51 @@ This shows:
 - HTTP response codes
 - Colour conversion details
 
+## Checking Agent Logs
+
+### Docker Container Logs
+
+SSH into your EC2 instance and view Docker logs:
+
+```bash
+# Connect to instance
+aws ssm start-session --target <INSTANCE_ID>
+
+# View running containers
+docker ps
+
+# View agent logs (live)
+docker logs -f <CONTAINER_ID>
+
+# View last 50 lines
+docker logs --tail 50 <CONTAINER_ID>
+```
+
+### Greengrass Component Logs
+
+Greengrass stores component logs locally:
+
+```bash
+# View agent component logs
+sudo tail -f /greengrass/v2/logs/com.robotinc.EdgeAgent.log
+
+# List all Greengrass logs
+sudo ls -la /greengrass/v2/logs/
+
+# View Greengrass system logs
+sudo tail -f /greengrass/v2/logs/greengrass.log
+```
+
+### System Logs
+
+```bash
+# Docker service logs
+sudo journalctl -u docker -f
+
+# System messages
+sudo tail -f /var/log/messages
+```
+
 ## Bedrock Metrics (Automatic)
 
 Bedrock automatically logs to CloudWatch, no instrumentation needed:

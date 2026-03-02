@@ -36,11 +36,15 @@ Greengrass extends AWS to edge devices for local compute, ML inference (if you h
 
 **Our Approach:**
 
-We install Greengrass Nucleus for device provisioning and IoT connectivity, then run the agent as **standalone Docker** (not a Greengrass component).
+We create a Greengrass component that runs the agent as a Docker container. CDK deploys the [component recipe](https://github.com/jakesky45/Robotinc/blob/main/infrastructure/cdk/lib/robotinc-stack.ts#L40-L76) automatically - you can view it in the AWS IoT Console under Components or via CLI:
 
-For this demo, we run Docker directly (SSH in, run `agent`). Simpler to debug and iterate.
+```bash
+aws greengrassv2 get-component --arn arn:aws:greengrass:REGION:ACCOUNT:components:com.robotinc.EdgeAgent
+```
 
-For production with many devices, you'd package the agent as a Greengrass component and use deployments for OTA updates. We include `greengrass-recipe.yaml` as a starting point if you want to try this.
+For quick testing, we also provide a standalone `agent` command (SSH in, run `agent`). Simpler to debug and iterate during development.
+
+The Greengrass component enables OTA updates and centralised management for deployments.
 
 ## CDK Setup
 
@@ -73,7 +77,6 @@ export CDK_DOCKER=podman
 
 **Compute**
 - EC2 t4g.small ARM64 (cost-optimised)
-- Greengrass Core (auto-installed via SSM)
 - Docker for agent container
 
 **Storage**
@@ -81,10 +84,10 @@ export CDK_DOCKER=podman
 - ECR for Docker images
 - S3 for deployment artifacts
 
-**Automation**
-- SSM Document: Greengrass setup script
-- SSM Association: Triggers setup on instance
-- Lambda: Processes device state updates
+**IoT**
+- IoT Thing for M5Stick device
+- IoT Rule to log device state to DynamoDB
+- Lambda function to process state updates
 
 **Key Code:**
 
@@ -101,11 +104,17 @@ const greengrassInstance = new ec2.Instance(this, 'GreengrassInstance', {
   requireImdsv2: true
 });
 
-// Build and push Docker image
+// Build and push Docker image for ARM64
 const agentImage = new ecrAssets.DockerImageAsset(this, 'AgentImage', {
   directory: path.join(__dirname, '../../../components/edge-agent'),
   platform: ecrAssets.Platform.LINUX_ARM64
 });
+
+// Create helper scripts on instance
+greengrassInstance.userData.addCommands(
+  `echo 'docker run -it --rm --network host -e AWS_REGION=${this.region} ${agentImage.imageUri}' > /usr/local/bin/agent`,
+  'chmod +x /usr/local/bin/agent'
+);
 ```
 
 ## Deploy
@@ -130,33 +139,12 @@ One command:
 
 ## Operating at the Edge
 
-**Automated Greengrass Setup**
-
-SSM document provisions Greengrass:
-
-```bash
-yum install -y docker git java-17-amazon-corretto-headless
-usermod -a -G docker ec2-user
-usermod -a -G docker ssm-user
-
-java -jar Greengrass.jar \
-  --aws-region ${region} \
-  --thing-name robotinc-greengrass-core \
-  --provision true \
-  --setup-system-service true
-```
-
-Creates IoT Thing, device certificates, and systemd service.
-
 **Running the Agent**
 
-We run the agent as standalone Docker, not as a Greengrass component.
-
-SSM document creates shell aliases:
+The agent runs as a Docker container on EC2. CDK creates a helper script:
 
 ```bash
-agent          # Normal mode
-agent-verbose  # Detailed logging
+agent          # Start the agent
 ```
 
 Behind the scenes:
@@ -164,7 +152,6 @@ Behind the scenes:
 # What 'agent' actually runs:
 docker run -it --rm --network host \
   -e AWS_REGION=eu-west-2 \
-  -e OLLAMA_HOST=http://localhost:11434 \
   <image-uri>
 ```
 
@@ -179,9 +166,6 @@ INSTANCE_ID=$(aws cloudformation describe-stacks \
 
 # Connect via SSM (no SSH keys!)
 aws ssm start-session --target $INSTANCE_ID
-
-# Check Greengrass
-sudo systemctl status greengrass
 
 # Run agent
 agent
@@ -216,8 +200,12 @@ Shutting down agent...
 
 **Verbose Mode:**
 
+For debugging, run the agent with verbose logging:
+
 ```bash
-agent-verbose
+docker run -it --rm --network host \
+  -e AWS_REGION=eu-west-2 \
+  <image-uri> python agent.py -v
 
 [VERBOSE MODE ENABLED]
 
