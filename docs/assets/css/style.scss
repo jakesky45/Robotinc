@@ -1,23 +1,26 @@
 ---
 ---
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-/* Dark Theme with Green Accents */
+/* Dark theme, shared across jakesky45 projects: amber (indicator light) to
+   cyan (AWS/tech) as the accent pair, Space Grotesk for display, Inter for
+   body copy. */
 :root {
-  --accent-green: #00ff88;
-  --accent-green-dim: #00cc6a;
-  --bg-black: #000000;
-  --bg-dark: #0d0d0d;
-  --bg-card: #1a1a1a;
-  --text-primary: #e8e8e8;
-  --text-secondary: #888;
-  --border-subtle: #2a2a2a;
+  --accent: #ff8a3d;
+  --accent-dim: #e8701f;
+  --accent2: #35c9ff;
+  --bg-black: #0a0d12;
+  --bg-dark: #0d1017;
+  --bg-card: #12161e;
+  --text-primary: #e8ebf1;
+  --text-secondary: #8b93a7;
+  --border-subtle: #242b38;
 }
 
 /* Global Styles */
 body {
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg-black);
   color: var(--text-primary);
   line-height: 1.7;
@@ -27,7 +30,8 @@ body {
 /* Header */
 header {
   background: var(--bg-dark);
-  border-bottom: 1px solid var(--accent-green);
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--accent), var(--accent2)) 1;
   padding: 40px 0;
 }
 
@@ -63,18 +67,18 @@ nav a {
 }
 
 nav a:hover {
-  color: var(--accent-green);
+  color: var(--accent2);
 }
 
 /* Links */
 a {
-  color: var(--accent-green);
+  color: var(--accent2);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 a:hover {
-  color: var(--accent-green-dim);
+  color: var(--accent-dim);
   text-decoration: underline;
 }
 
@@ -98,7 +102,7 @@ h2::before {
   display: inline-block;
   width: 4px;
   height: 20px;
-  background: var(--accent-green);
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
   margin-right: 12px;
   vertical-align: middle;
 }
@@ -111,12 +115,12 @@ code {
   padding: 3px 8px;
   font-family: "SF Mono", Monaco, "Courier New", monospace;
   font-size: 0.88em;
-  color: var(--accent-green);
+  color: var(--accent2);
 }
 
 pre {
   background: var(--bg-dark);
-  border-left: 2px solid var(--accent-green);
+  border-left: 2px solid var(--accent);
   padding: 20px;
   border-radius: 6px;
   overflow-x: auto;
@@ -132,7 +136,7 @@ pre code {
 
 /* Blockquotes */
 blockquote {
-  border-left: 2px solid var(--accent-green);
+  border-left: 2px solid var(--accent);
   background: var(--bg-card);
   padding: 24px 32px;
   margin: 32px 0;
@@ -155,7 +159,7 @@ th {
   color: #fff;
   padding: 14px;
   text-align: left;
-  border-bottom: 1px solid var(--accent-green);
+  border-bottom: 1px solid var(--accent);
   font-weight: 600;
 }
 
@@ -166,7 +170,7 @@ td {
 }
 
 tr:nth-child(even) {
-  background: rgba(0, 255, 136, 0.03);
+  background: rgba(255, 138, 61, 0.04);
 }
 
 /* Footer */
