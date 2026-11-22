@@ -134,6 +134,21 @@ body {
   position: relative;
 }
 .hero-icon svg { width: 25px; height: 25px; }
+.hero-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.6rem;
+  line-height: 1.25;
+  color: #11131a;
+  margin: 0.9rem 0 0.3rem;
+  font-weight: 700;
+  position: relative;
+}
+.hero-tagline {
+  color: rgba(17,19,26,0.68);
+  font-size: 0.9rem;
+  margin: 0;
+  position: relative;
+}
 
 .badges { display: flex; flex-wrap: wrap; gap: 0.55rem; margin: 0 0 1.5rem; }
 .badge {
