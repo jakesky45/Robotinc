@@ -126,20 +126,12 @@ body {
   background-image: repeating-linear-gradient(45deg, rgba(10,13,18,0.06) 0 2px, transparent 2px 16px);
   pointer-events: none;
 }
-.hero-icon {
-  width: 46px; height: 46px;
-  border-radius: 12px;
-  background: rgba(10,13,18,0.28);
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-}
-.hero-icon svg { width: 25px; height: 25px; }
 .hero h1 {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.9rem;
   line-height: 1.2;
   color: #11131a;
-  margin: 0.9rem 0 0.35rem;
+  margin: 0 0 0.35rem;
   position: relative;
 }
 .hero .hero-sub {
