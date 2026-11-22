@@ -134,21 +134,41 @@ body {
   position: relative;
 }
 .hero-icon svg { width: 25px; height: 25px; }
-.hero-title {
+.hero h1 {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.6rem;
-  line-height: 1.25;
+  font-size: 1.9rem;
+  line-height: 1.2;
   color: #11131a;
-  margin: 0.9rem 0 0.3rem;
-  font-weight: 700;
+  margin: 0.9rem 0 0.35rem;
   position: relative;
 }
-.hero-tagline {
+.hero .hero-sub {
+  font-weight: 600;
+  color: rgba(17,19,26,0.82);
+  font-size: 1.02rem;
+  margin: 0 0 0.3rem;
+  position: relative;
+}
+.hero .hero-tagline {
   color: rgba(17,19,26,0.68);
   font-size: 0.9rem;
   margin: 0;
   position: relative;
 }
+
+.repo-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0 0 1.75rem;
+  font-size: 0.9rem;
+}
+.repo-card .repo-icon { flex: 0 0 auto; display: flex; color: var(--text-secondary); }
+.repo-card a { color: var(--accent2); font-weight: 600; }
 
 .badges { display: flex; flex-wrap: wrap; gap: 0.55rem; margin: 0 0 1.5rem; }
 .badge {

@@ -1,9 +1,7 @@
 ---
 layout: default
-title: Robotinc - Physical AI Demo
+title: Building Physical AI with AWS
 ---
-
-# Building Physical AI with AWS
 
 > *"The next frontier of AI isn't just understanding the world, it's acting within it."*
 
