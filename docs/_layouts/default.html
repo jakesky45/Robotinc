@@ -9,41 +9,66 @@
   <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
 </head>
 <body>
-  <header>
-    <div class="container">
-      <h1>{{ site.title }}</h1>
-    </div>
-  </header>
+<div class="shell">
 
-  <nav>
-    <div class="container">
-      <a href="{{ '/' | relative_url }}">Home</a> |
-      <a href="https://github.com/jakesky45/Robotinc">GitHub</a> |
-      <a href="https://aws.amazon.com/bedrock">Bedrock</a> |
-      <a href="https://strandsagents.com/latest/">Strands</a> |
-      <a href="https://aws.amazon.com/greengrass">Greengrass</a> |
-      <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit">M5Stick</a>
+  <nav class="sidenav">
+    <div class="brand">
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0d12" stroke-width="1.8"><path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/><path d="M19.4 13.5a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19.9a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2.1a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H8a1.65 1.65 0 001-1.51V2.1a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V8a1.65 1.65 0 001.51 1h.09a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
+      Robotinc
     </div>
+    <div class="toc-label">Tutorial Series</div>
+    <a href="{{ '/' | relative_url }}">Home</a>
+    <a href="{{ '/posts/01-m5stick-setup.html' | relative_url }}">Part 1: M5Stick Setup</a>
+    <a href="{{ '/posts/02-mqtt-setup.html' | relative_url }}">Part 2: MQTT</a>
+    <a href="{{ '/posts/03-aws-iot-setup.html' | relative_url }}">Part 3: AWS IoT Setup</a>
+    <a href="{{ '/posts/04-aws-iot-core.html' | relative_url }}">Part 4: IoT Core + Certs</a>
+    <a href="{{ '/posts/05-strands-agents.html' | relative_url }}">Part 5: Strands Agents</a>
+    <a href="{{ '/posts/06-edge-deployment.html' | relative_url }}">Part 6: Edge Deployment</a>
+    <a href="{{ '/posts/07-observability.html' | relative_url }}">Part 7: Observability</a>
+    <a href="{{ '/posts/08-wrap-up.html' | relative_url }}">Part 8: Wrap Up</a>
+    <div class="toc-label" style="margin-top:1.25rem">Links</div>
+    <a href="https://github.com/jakesky45/Robotinc" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://aws.amazon.com/bedrock" target="_blank" rel="noopener">Bedrock</a>
+    <a href="https://strandsagents.com/latest/" target="_blank" rel="noopener">Strands</a>
+    <a href="https://aws.amazon.com/greengrass" target="_blank" rel="noopener">Greengrass</a>
+    <a href="https://shop.m5stack.com/products/m5stickc-plus-esp32-pico-mini-iot-development-kit" target="_blank" rel="noopener">M5Stick</a>
   </nav>
 
-  <main class="container">
-    {{ content }}
-  </main>
+  <div class="main">
 
-  <footer>
-    <div class="container">
+    <details class="mobile-toc">
+      <summary>Tutorial Series</summary>
+      <nav>
+        <a href="{{ '/' | relative_url }}">Home</a>
+        <a href="{{ '/posts/01-m5stick-setup.html' | relative_url }}">Part 1: M5Stick Setup</a>
+        <a href="{{ '/posts/02-mqtt-setup.html' | relative_url }}">Part 2: MQTT</a>
+        <a href="{{ '/posts/03-aws-iot-setup.html' | relative_url }}">Part 3: AWS IoT Setup</a>
+        <a href="{{ '/posts/04-aws-iot-core.html' | relative_url }}">Part 4: IoT Core + Certs</a>
+        <a href="{{ '/posts/05-strands-agents.html' | relative_url }}">Part 5: Strands Agents</a>
+        <a href="{{ '/posts/06-edge-deployment.html' | relative_url }}">Part 6: Edge Deployment</a>
+        <a href="{{ '/posts/07-observability.html' | relative_url }}">Part 7: Observability</a>
+        <a href="{{ '/posts/08-wrap-up.html' | relative_url }}">Part 8: Wrap Up</a>
+      </nav>
+    </details>
+
+    <div class="content">
+
+      <header class="hero">
+        <div class="hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0d12" stroke-width="1.8"><path d="M12 8a4 4 0 100 8 4 4 0 000-8z"/><path d="M19.4 13.5a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19.9a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2.1a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H8a1.65 1.65 0 001-1.51V2.1a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V8a1.65 1.65 0 001.51 1h.09a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+      </header>
+
+      <div class="badges">
+        <span class="badge"><span class="dot" style="background:var(--accent)"></span>AWS IoT Core</span>
+        <span class="badge"><span class="dot" style="background:var(--accent2)"></span>Bedrock</span>
+        <span class="badge"><span class="dot" style="background:#4ade80"></span>Greengrass</span>
+        <span class="badge"><span class="dot" style="background:#c3a6ff"></span>Strands Agents</span>
+        <span class="badge"><span class="dot" style="background:#ff6b6b"></span>M5Stick-C</span>
+      </div>
+
+      {{ content }}
+
     </div>
-  </footer>
-
-  <style>
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 30px;
-    }
-    main {
-      padding: 20px 0;
-    }
-  </style>
+  </div>
+</div>
 </body>
 </html>
