@@ -65,7 +65,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   flex: 0 0 auto;
 }
-.sidenav .brand .chip svg { width: 15px; height: 15px; }
+.sidenav .brand .chip svg { width: 16px; height: 16px; display: block; }
 .sidenav .toc-label {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.68rem;
